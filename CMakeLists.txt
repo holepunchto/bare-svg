@@ -11,6 +11,10 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 project(bare_svg C)
 
+if(DEFINED ENV{Rust_CARGO_TARGET})
+  set(Rust_CARGO_TARGET $ENV{Rust_CARGO_TARGET})
+endif()
+
 include(FetchContent)
 
 FetchContent_Declare(

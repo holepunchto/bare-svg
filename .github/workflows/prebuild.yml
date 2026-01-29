@@ -63,6 +63,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
     name: Build / ${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.tags }}
+    env:
+      Rust_CARGO_TARGET: ${{ matrix.target }}
     steps:
       - run: apt update && apt install -y git clang lld curl
         if: ${{ matrix.platform == 'linux' }}
