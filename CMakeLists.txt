@@ -59,6 +59,8 @@ if(APPLE)
     "-framework CoreText"
     "-framework CoreGraphics"
   )
+elseif(ANDROID)
+  target_link_libraries(${bare_svg} PRIVATE m dl log)
 elseif(UNIX)
   target_link_libraries(${bare_svg} PRIVATE m pthread dl)
 elseif(WIN32)
