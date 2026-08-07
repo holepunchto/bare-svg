@@ -13,29 +13,41 @@
 #define DEFAULT_HEIGHT 512
 #define DEFAULT_DPI 96.0f
 
-static resvg_options *g_options_with_fonts = NULL;
-static resvg_options *g_options_without_fonts = NULL;
+typedef struct {
+  resvg_options *with_fonts;
+  resvg_options *without_fonts;
+} bare_svg_context_t;
 
 static void
 bare_svg__on_finalize(js_env_t *env, void *data, void *finalize_hint) {
   free(data);
 }
 
+static void
+bare_svg__on_teardown(void *data) {
+  bare_svg_context_t *context = (bare_svg_context_t *) data;
+
+  if (context->with_fonts) resvg_options_destroy(context->with_fonts);
+  if (context->without_fonts) resvg_options_destroy(context->without_fonts);
+
+  free(context);
+}
+
 static resvg_options *
-bare_svg__get_options(float dpi, bool load_fonts) {
+bare_svg__get_options(bare_svg_context_t *context, float dpi, bool load_fonts) {
   if (load_fonts) {
-    if (g_options_with_fonts == NULL) {
-      g_options_with_fonts = resvg_options_create();
-      resvg_options_load_system_fonts(g_options_with_fonts);
+    if (context->with_fonts == NULL) {
+      context->with_fonts = resvg_options_create();
+      resvg_options_load_system_fonts(context->with_fonts);
     }
-    resvg_options_set_dpi(g_options_with_fonts, dpi);
-    return g_options_with_fonts;
+    resvg_options_set_dpi(context->with_fonts, dpi);
+    return context->with_fonts;
   } else {
-    if (g_options_without_fonts == NULL) {
-      g_options_without_fonts = resvg_options_create();
+    if (context->without_fonts == NULL) {
+      context->without_fonts = resvg_options_create();
     }
-    resvg_options_set_dpi(g_options_without_fonts, dpi);
-    return g_options_without_fonts;
+    resvg_options_set_dpi(context->without_fonts, dpi);
+    return context->without_fonts;
   }
 }
 
@@ -54,8 +66,9 @@ bare_svg_decode(js_env_t *env, js_callback_info_t *info) {
 
   size_t argc = 2;
   js_value_t *argv[2];
+  bare_svg_context_t *context;
 
-  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  err = js_get_callback_info(env, info, &argc, argv, NULL, (void **) &context);
   assert(err == 0);
 
   if (argc < 1) {
@@ -155,7 +168,7 @@ bare_svg_decode(js_env_t *env, js_callback_info_t *info) {
     }
   }
 
-  resvg_options *opt = bare_svg__get_options(dpi, load_fonts);
+  resvg_options *opt = bare_svg__get_options(context, dpi, load_fonts);
 
   resvg_render_tree *tree = NULL;
   int parse_result = resvg_parse_tree_from_data(svg_data, svg_len, opt, &tree);
@@ -275,10 +288,16 @@ static js_value_t *
 bare_svg_exports(js_env_t *env, js_value_t *exports) {
   int err;
 
+  bare_svg_context_t *context = calloc(1, sizeof(bare_svg_context_t));
+  assert(context != NULL);
+
+  err = js_add_teardown_callback(env, bare_svg__on_teardown, (void *) context);
+  assert(err == 0);
+
 #define V(name, fn) \
   { \
     js_value_t *val; \
-    err = js_create_function(env, name, -1, fn, NULL, &val); \
+    err = js_create_function(env, name, -1, fn, (void *) context, &val); \
     assert(err == 0); \
     err = js_set_named_property(env, exports, name, val); \
     assert(err == 0); \
