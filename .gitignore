@@ -4,3 +4,4 @@ node_modules/
 sandbox/
 package-lock.json
 .cache
+coverage

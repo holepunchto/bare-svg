@@ -16,7 +16,9 @@
   ],
   "addon": true,
   "scripts": {
-    "test": "prettier . --check && bare test.js"
+    "format": "prettier --write . && lunte --fix",
+    "lint": "prettier --check . && lunte",
+    "test": "brittle-bare --coverage test.js"
   },
   "repository": {
     "type": "git",
@@ -29,9 +31,10 @@
   },
   "homepage": "https://github.com/holepunchto/bare-svg#readme",
   "devDependencies": {
-    "brittle": "^3.4.0",
+    "brittle": "^3.19.1",
     "cmake-bare": "^1.1.2",
-    "prettier": "^3.3.3",
+    "lunte": "^1.8.0",
+    "prettier": "^3.7.4",
     "prettier-config-holepunch": "^2.0.0"
   }
 }
