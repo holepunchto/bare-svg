@@ -37,6 +37,22 @@ test('decode with loadFonts false', (t) => {
   t.ok(Buffer.isBuffer(result.data))
 })
 
+test('decode accepts a Buffer', (t) => {
+  const result = svg.decode(Buffer.from(fixture))
+
+  t.ok(result.width > 0)
+  t.ok(result.height > 0)
+  t.ok(Buffer.isBuffer(result.data))
+})
+
+test('decode throws on non-object options', (t) => {
+  t.exception.all(() => svg.decode(fixture, 42), /Options must be an object/)
+})
+
+test('decode throws on malformed SVG', (t) => {
+  t.exception(() => svg.decode('this is not an svg document'))
+})
+
 test('encode throws', (t) => {
   t.exception(() => svg.encode(Buffer.alloc(0)))
 })
