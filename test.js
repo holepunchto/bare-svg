@@ -49,6 +49,32 @@ test('decode throws on non-object options', (t) => {
   t.exception.all(() => svg.decode(fixture, 42), /Options must be an object/)
 })
 
+test('decode throws on a canvas that rounds to zero pixels', (t) => {
+  t.exception(
+    () => svg.decode('<svg xmlns="http://www.w3.org/2000/svg" width="48" height=".2"></svg>'),
+    /dimensions are out of range/
+  )
+})
+
+test('decode throws on a canvas beyond the pixel cap', (t) => {
+  t.exception(
+    () =>
+      svg.decode('<svg xmlns="http://www.w3.org/2000/svg" width="100000" height="100000"></svg>'),
+    /dimensions are out of range/
+  )
+})
+
+test('decode rounds a sub-pixel dimension up', (t) => {
+  const result = svg.decode('<svg xmlns="http://www.w3.org/2000/svg" width="48" height=".7"></svg>')
+
+  t.is(result.width, 48)
+  t.is(result.height, 1)
+})
+
+test('decode throws on a width option that rounds to zero pixels', (t) => {
+  t.exception(() => svg.decode(fixture, { width: 0.2 }), /dimensions are out of range/)
+})
+
 test('decode throws on malformed SVG', (t) => {
   t.exception(() => svg.decode('this is not an svg document'))
 })
