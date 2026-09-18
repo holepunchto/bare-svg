@@ -9,9 +9,10 @@
 
 #include "resvg.h"
 
-#define DEFAULT_WIDTH 512
+#define DEFAULT_WIDTH  512
 #define DEFAULT_HEIGHT 512
-#define DEFAULT_DPI 96.0f
+#define DEFAULT_DPI    96.0f
+#define MAX_PIXELS     (1ull << 28)
 
 typedef struct {
   resvg_options *with_fonts;
@@ -225,8 +226,20 @@ bare_svg_decode(js_env_t *env, js_callback_info_t *info) {
     height = svg_height;
   }
 
-  int w = (int) roundf(width);
-  int h = (int) roundf(height);
+  double pixel_width = round(width);
+  double pixel_height = round(height);
+
+  if (!(pixel_width >= 1.0) || !(pixel_height >= 1.0) || pixel_width * pixel_height > MAX_PIXELS) {
+    resvg_tree_destroy(tree);
+
+    err = js_throw_error(env, NULL, "SVG dimensions are out of range");
+    assert(err == 0);
+
+    return NULL;
+  }
+
+  int w = (int) pixel_width;
+  int h = (int) pixel_height;
 
   size_t buffer_size = (size_t) w * h * 4;
   uint8_t *rgba = malloc(buffer_size);
