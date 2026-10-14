@@ -1,0 +1,13 @@
+diff --git a/crates/c-api/Cargo.toml b/crates/c-api/Cargo.toml
+index fe59557d..57104d2a 100644
+--- a/crates/c-api/Cargo.toml
++++ b/crates/c-api/Cargo.toml
+@@ -10,7 +10,7 @@ workspace = "../.."
+ [lib]
+ name = "resvg"
+ path = "lib.rs"
+-crate-type = ["cdylib", "staticlib"]
++crate-type = ["staticlib"]
+ 
+ [dependencies]
+ log = "0.4"

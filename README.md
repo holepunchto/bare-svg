@@ -26,6 +26,8 @@ const decoded = svg.decode(image, {
 // }
 ```
 
+The WebAssembly build for `wasi-wasm32` needs the WASI `random` capability, as Rust's standard library seeds its hash maps with it. Without it, the addon crashes on its first call.
+
 ## License
 
 Apache-2.0
