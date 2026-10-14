@@ -12,6 +12,7 @@
     "binding.c",
     "binding.js",
     "CMakeLists.txt",
+    "patches",
     "prebuilds"
   ],
   "addon": true,
@@ -32,7 +33,9 @@
   "homepage": "https://github.com/holepunchto/bare-svg#readme",
   "devDependencies": {
     "brittle": "^3.19.1",
-    "cmake-bare": "^1.1.2",
+    "cmake-bare": "^1.10.1",
+    "cmake-cargo": "^0.0.5",
+    "cmake-fetch": "^1.5.3",
     "lunte": "^1.8.0",
     "prettier": "^3.7.4",
     "prettier-config-holepunch": "^2.0.0"
