@@ -1,0 +1,72 @@
+diff --git a/crates/c-api/lib.rs b/crates/c-api/lib.rs
+index 1d56845..1318541 100644
+--- a/crates/c-api/lib.rs
++++ b/crates/c-api/lib.rs
+@@ -556,11 +556,14 @@ pub extern "C" fn resvg_parse_tree_from_data(
+         &*opt
+     };
+ 
+-    let utree = usvg::Tree::from_data(data, &raw_opt.options);
++    let utree = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
++        usvg::Tree::from_data(data, &raw_opt.options)
++    }));
+ 
+     let utree = match utree {
+-        Ok(tree) => tree,
+-        Err(e) => return convert_error(e) as i32,
++        Ok(Ok(tree)) => tree,
++        Ok(Err(e)) => return convert_error(e) as i32,
++        Err(_) => return resvg_error::PARSING_FAILED as i32,
+     };
+ 
+     let tree_box = Box::new(resvg_render_tree(utree));
+@@ -868,6 +871,7 @@ fn convert_error(e: usvg::Error) -> resvg_error {
+ /// @param height Pixmap height.
+ /// @param pixmap Pixmap data. Should have width*height*4 size and contain
+ ///               premultiplied RGBA8888 pixels.
++/// @return `false` when rendering failed.
+ #[unsafe(no_mangle)]
+ pub extern "C" fn resvg_render(
+     tree: *const resvg_render_tree,
+@@ -875,7 +879,7 @@ pub extern "C" fn resvg_render(
+     width: u32,
+     height: u32,
+     pixmap: *mut c_char,
+-) {
++) -> bool {
+     let tree = unsafe {
+         assert!(!tree.is_null());
+         &*tree
+@@ -884,9 +888,15 @@ pub extern "C" fn resvg_render(
+     let pixmap_len = width as usize * height as usize * tiny_skia::BYTES_PER_PIXEL;
+     let pixmap: &mut [u8] =
+         unsafe { std::slice::from_raw_parts_mut(pixmap as *mut u8, pixmap_len) };
+-    let mut pixmap = tiny_skia::PixmapMut::from_bytes(pixmap, width, height).unwrap();
++    let mut pixmap = match tiny_skia::PixmapMut::from_bytes(pixmap, width, height) {
++        Some(pixmap) => pixmap,
++        None => return false,
++    };
+ 
+-    resvg::render(&tree.0, transform.to_tiny_skia(), &mut pixmap)
++    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
++        resvg::render(&tree.0, transform.to_tiny_skia(), &mut pixmap)
++    }))
++    .is_ok()
+ }
+ 
+ /// @brief Renders a Node by ID onto the image.
+diff --git a/crates/c-api/resvg.h b/crates/c-api/resvg.h
+index fdf09a1..3851809 100644
+--- a/crates/c-api/resvg.h
++++ b/crates/c-api/resvg.h
+@@ -481,8 +481,9 @@ void resvg_tree_destroy(resvg_render_tree *tree);
+  * @param height Pixmap height.
+  * @param pixmap Pixmap data. Should have width*height*4 size and contain
+  *               premultiplied RGBA8888 pixels.
++ * @return `false` when rendering failed.
+  */
+-void resvg_render(const resvg_render_tree *tree,
++bool resvg_render(const resvg_render_tree *tree,
+                   resvg_transform transform,
+                   uint32_t width,
+                   uint32_t height,

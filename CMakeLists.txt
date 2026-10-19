@@ -13,6 +13,7 @@ fetch_package(
   SOURCE_DIR resvg
   PATCHES
     patches/01-resvg-staticlib.patch
+    patches/02-resvg-catch-panics.patch
 )
 
 add_crate(MANIFEST ${resvg}/crates/c-api/Cargo.toml)

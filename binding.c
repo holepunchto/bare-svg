@@ -268,9 +268,16 @@ bare_svg_decode(js_env_t *env, js_callback_info_t *info) {
     .f = offset_y
   };
 
-  resvg_render(tree, transform, (uint32_t) w, (uint32_t) h, (char *) rgba);
+  bool rendered = resvg_render(tree, transform, (uint32_t) w, (uint32_t) h, (char *) rgba);
 
   resvg_tree_destroy(tree);
+
+  if (!rendered) {
+    free(rgba);
+    err = js_throw_error(env, NULL, "Failed to render SVG");
+    assert(err == 0);
+    return NULL;
+  }
 
   js_value_t *result;
   err = js_create_object(env, &result);
